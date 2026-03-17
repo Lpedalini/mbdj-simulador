@@ -2,36 +2,6 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-  <!-- Firebase SDK -->
-  <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-      import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-      import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-      // 🔥 FIREBASE CONFIG
-      const firebaseConfig = {
-            apiKey: "AIzaSyBk4aoeq6Wn-qSDeqZ_sJ9DH1c6Owdur50",
-            authDomain: "simulador-pricing-908fc.firebaseapp.com",
-            projectId: "simulador-pricing-908fc",
-            storageBucket: "simulador-pricing-908fc.firebasestorage.app",
-            messagingSenderId: "238440571312",
-            appId: "1:238440571312:web:312a03210924e983157675"
-      };
-
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const db = getFirestore(app);
-      window._firebaseAuth = auth;
-      window._firebaseDb = db;
-      window._GoogleAuthProvider = GoogleAuthProvider;
-      window._signInWithPopup = signInWithPopup;
-      window._signOut = signOut;
-      window._onAuthStateChanged = onAuthStateChanged;
-      window._doc = doc;
-      window._getDoc = getDoc;
-      window._setDoc = setDoc;
-      window._onSnapshot = onSnapshot;
-  </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MBDJ · Simulador de Precificação Legrand</title>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
@@ -848,7 +818,7 @@ async function exportExcel(mode) {
     const sup = SUPPLIERS[key];
     const stt = state[key];
     const hasIPIST = sup.hasIPI || sup.hasST;
-    const sheetName = key==='hdl'?'HDL Manaus':key==='sms'?'SMS Guarulhos':key==='pial'?'Pial Guarulhos':key==='vonderSP'?'Vonder SP':'Vonder SC (TTD478)';
+    const sheetName = {hdl:'HDL Manaus',sms:'SMS Guarulhos',pial:'Pial Guarulhos',vonderSP:'Vonder SP',vonderSC:'Vonder SC (TTD478)'}[key]||key;
     const ws = wb.addWorksheet(sheetName);
     ws.views = [{showGridLines:false}];
     let R = 1;
@@ -1106,7 +1076,7 @@ async function exportExcel(mode) {
       R++;
     });
 
- function exportExcel   R+=2;
+    R+=2;
     ws.getCell(R,1).value='LEGENDA:'; ws.getCell(R,1).font=font({bold:true,size:9}); R++;
     [['Texto Azul = Inputs editáveis (altere para simular cenários)','0000FF'],
      ['Fundo Amarelo = Parâmetros globais (células de referência $B$)','B8860B'],
