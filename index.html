@@ -848,7 +848,7 @@ async function exportExcel(mode) {
     const sup = SUPPLIERS[key];
     const stt = state[key];
     const hasIPIST = sup.hasIPI || sup.hasST;
-    const sheetName = key==='hdl'?'HDL Manaus':key==='sms'?'SMS Guarulhos':'Pial Guarulhos';
+    const sheetName = key==='hdl'?'HDL Manaus':key==='sms'?'SMS Guarulhos':key==='pial'?'Pial Guarulhos':key==='vonderSP'?'Vonder SP':'Vonder SC (TTD478)';
     const ws = wb.addWorksheet(sheetName);
     ws.views = [{showGridLines:false}];
     let R = 1;
@@ -1106,7 +1106,7 @@ async function exportExcel(mode) {
       R++;
     });
 
-    R+=2;
+ function exportExcel   R+=2;
     ws.getCell(R,1).value='LEGENDA:'; ws.getCell(R,1).font=font({bold:true,size:9}); R++;
     [['Texto Azul = Inputs editáveis (altere para simular cenários)','0000FF'],
      ['Fundo Amarelo = Parâmetros globais (células de referência $B$)','B8860B'],
