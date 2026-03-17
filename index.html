@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MBDJ · Simulador de Precificação Legrand</title>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#0B1120;--card:#111827;--card2:#1a2332;--border:#1e2d3d;
+    --accent:#3B82F6;--green:#10B981;--red:#EF4444;--yellow:#F59E0B;
+    --purple:#8B5CF6;--orange:#F97316;--cyan:#06B6D4;
+    --text:#F1F5F9;--muted:#94A3B8;--dim:#64748B;
+  }
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;line-height:1.5;min-height:100vh}
+  .header{background:linear-gradient(135deg,var(--card) 0%,#0d1929 50%,var(--card) 100%);border-bottom:1px solid var(--border);padding:20px 24px}
+  .header-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+  .badge{font-size:13px;font-weight:700;color:var(--accent);background:rgba(59,130,246,0.15);padding:4px 10px;border-radius:6px}
+  .badge-hdl{color:var(--orange);background:rgba(249,115,22,0.15)}
+  .badge-sms{color:var(--cyan);background:rgba(6,182,212,0.15)}
+  .badge-pial{color:var(--purple);background:rgba(139,92,246,0.15)}
+  .badge-vsp{color:var(--yellow);background:rgba(245,158,11,0.15)}
+  .badge-vsc{color:var(--green);background:rgba(16,185,129,0.15)}
+  .title{font-size:20px;font-weight:700;letter-spacing:-0.5px}
+  .subtitle{color:var(--muted);font-size:12px;margin-top:2px}
+  #headerBadge,#headerInfo{transition:all .3s}
+
+  .tabs{display:flex;gap:4px;margin-top:16px;flex-wrap:wrap}
+  .tab{padding:10px 18px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;background:transparent;color:var(--muted);transition:all .2s}
+  .tab.active{background:var(--accent);color:#fff}
+  .tab:hover:not(.active){background:rgba(255,255,255,0.05)}
+  .tab .tab-count{font-size:10px;font-weight:500;opacity:0.7;margin-left:4px}
+
+  .container{padding:20px 24px;max-width:1400px;margin:0 auto}
+  .params-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
+  .params-title{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+  .params-title h2{font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
+  .params-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+  .param-group{position:relative}
+  .param-label{font-size:10px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px}
+  .param-sublabel{font-size:9px;color:var(--dim);margin-top:2px}
+  .param-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500;outline:none;transition:border-color .2s}
+  .param-input:focus{border-color:var(--accent)}
+  .param-input.highlight-green{border-color:var(--green);background:rgba(16,185,129,0.05)}
+  .param-input.highlight-red{border-color:var(--red);background:rgba(239,68,68,0.05)}
+
+  .section-title{display:flex;align-items:center;gap:8px;margin:24px 0 14px}
+  .section-title span{font-size:18px}
+  .section-title h2{font-size:15px;font-weight:700;letter-spacing:-0.3px}
+  .section-title .line{flex:1;height:1px;background:var(--border);margin-left:8px}
+
+  .tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{padding:10px 12px;text-align:right;color:var(--muted);font-weight:600;font-size:9px;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;background:var(--card);z-index:2}
+  th:first-child,th:nth-child(2){text-align:left}
+  td{padding:8px 12px;text-align:right;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:11px;white-space:nowrap}
+  td:first-child{text-align:center;font-family:'DM Sans',sans-serif;color:var(--dim);font-size:10px}
+  td:nth-child(2){text-align:left;font-family:'DM Sans',sans-serif;font-weight:600;font-size:11px;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+  tr:nth-child(even){background:rgba(255,255,255,0.01)}
+  tr:hover{background:rgba(59,130,246,0.04)}
+  tr.total-row{background:rgba(59,130,246,0.06);font-weight:700}
+  tr.total-row td{border-bottom:none}
+  .col-separator{border-left:2px solid var(--border)}
+
+  .price-input{width:90px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:5px 8px;color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;text-align:right;outline:none;transition:all .2s}
+  .price-input:focus{border-color:var(--accent);background:rgba(59,130,246,0.15);box-shadow:0 0 0 2px rgba(59,130,246,0.15)}
+  .price-input.negative{border-color:var(--red);background:rgba(239,68,68,0.08);color:var(--red)}
+  .freight-input{width:70px;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 8px;color:var(--orange);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;text-align:right;outline:none;transition:all .2s}
+  .freight-input:focus{border-color:var(--orange);background:rgba(249,115,22,0.15)}
+
+  .margin-pos{color:var(--green);font-weight:700}
+  .margin-neg{color:var(--red);font-weight:700}
+  .margin-warn{color:var(--yellow);font-weight:700}
+  .margin-great{color:var(--cyan);font-weight:700}
+
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:16px}
+  .summary-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden}
+  .summary-card .glow{position:absolute;top:-20px;right:-20px;width:70px;height:70px;border-radius:50%;opacity:0.15}
+  .summary-label{color:var(--muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:6px}
+  .summary-value{font-size:22px;font-weight:800;letter-spacing:-0.5px;font-family:'JetBrains Mono',monospace}
+  .summary-sub{color:var(--dim);font-size:10px;margin-top:4px}
+
+  .formula-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-top:16px}
+  .formula-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:12px;letter-spacing:0.3px}
+  .formula-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+  .formula-block h4{font-size:11px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+  .formula-block p{font-size:10px;color:var(--muted);line-height:1.6;font-family:'JetBrains Mono',monospace}
+  .formula-block p span.op{color:var(--accent);font-weight:700}
+  .formula-block p span.credit{color:var(--green)}
+  .formula-block p span.debit{color:var(--red)}
+
+  .st-badge{display:inline-block;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle}
+  .st-badge.has-st{background:rgba(249,115,22,0.15);color:var(--orange)}
+  .st-badge.no-st{background:rgba(100,116,139,0.15);color:var(--dim)}
+
+  .footer{margin-top:36px;padding:14px 0;border-top:1px solid var(--border);text-align:center}
+  .footer span{color:var(--dim);font-size:10px}
+
+  @media(max-width:768px){
+    .header{padding:16px}.container{padding:16px}
+    .params-grid{grid-template-columns:repeat(2,1fr)}
+    .summary-grid{grid-template-columns:repeat(2,1fr)}
+    table{font-size:10px}th,td{padding:6px 8px}
+    .price-input{width:75px;font-size:11px}.freight-input{width:60px;font-size:10px}
+  }
+
+  .backup-bar{display:flex;align-items:center;gap:8px;margin-bottom:20px;padding:10px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px}
+  .backup-bar .bar-label{font-size:10px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:0.3px;margin-right:4px}
+  .backup-bar .bar-status{font-size:10px;color:var(--dim);margin-left:auto}
+  .backup-bar .bar-status .saved{color:var(--green)}
+  .btn-sm{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s}
+  .btn-sm:hover{background:rgba(255,255,255,0.05);color:var(--text)}
+  .btn-sm.btn-export{border-color:rgba(59,130,246,0.3);color:var(--accent)}
+  .btn-sm.btn-export:hover{background:rgba(59,130,246,0.1)}
+  .btn-sm.btn-import{border-color:rgba(16,185,129,0.3);color:var(--green)}
+  .btn-sm.btn-import:hover{background:rgba(16,185,129,0.1)}
+  .btn-sm.btn-excel{border-color:rgba(16,185,129,0.4);color:var(--green);font-weight:700}
+  .btn-sm.btn-excel:hover{background:rgba(16,185,129,0.12)}
+  .btn-sm.btn-reset{border-color:rgba(239,68,68,0.2);color:var(--dim)}
+  .btn-sm.btn-reset:hover{background:rgba(239,68,68,0.08);color:var(--red)}
+  #importFile{display:none}
+
+  .col-group-header{text-align:center!important;background:rgba(59,130,246,0.06)!important;color:var(--accent)!important;font-size:10px!important;letter-spacing:0.5px;border-bottom:2px solid rgba(59,130,246,0.2)!important}
+  .col-group-entrada{background:rgba(16,185,129,0.04)!important;color:var(--green)!important;border-bottom:2px solid rgba(16,185,129,0.15)!important}
+  .col-group-saida{background:rgba(239,68,68,0.04)!important;color:var(--red)!important;border-bottom:2px solid rgba(239,68,68,0.15)!important}
+  .col-group-resultado{background:rgba(139,92,246,0.04)!important;color:var(--purple)!important;border-bottom:2px solid rgba(139,92,246,0.15)!important}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-row">
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+        <span class="badge">MBDJ</span>
+        <span class="badge badge-hdl" id="headerBadge">HDL / Legrand</span>
+        <span class="title">Simulador de Precificação</span>
+      </div>
+      <div class="subtitle">Magazine Belle Deju · Lucro Real · Mercado Livre Full</div>
+    </div>
+    <div style="text-align:right" id="headerInfo">
+      <div style="font-size:13px;font-weight:600;color:var(--orange)">Fornecedor: HDL Manaus</div>
+      <div style="color:var(--dim);font-size:11px">Orç. 4504/0164 · Val. 31/03/2026 · CIF · À Vista</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('hdl',this)">🔌 HDL Manaus<span class="tab-count">12 SKUs</span></button>
+    <button class="tab" onclick="switchTab('sms',this)">⚡ SMS Guarulhos<span class="tab-count">14 SKUs</span></button>
+    <button class="tab" onclick="switchTab('pial',this)">💡 Pial Guarulhos<span class="tab-count">36 SKUs</span></button>
+    <button class="tab" onclick="switchTab('vonderSP',this)">🔧 Vonder SP<span class="tab-count">26 SKUs</span></button>
+    <button class="tab" onclick="switchTab('vonderSC',this)">🏷️ Vonder SC (TTD478)<span class="tab-count">26 SKUs</span></button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- PARAMETERS -->
+  <div class="params-panel">
+    <div class="params-title"><span>⚙️</span><h2>Parâmetros da Operação</h2></div>
+    <div class="params-grid">
+      <div class="param-group">
+        <div class="param-label">Comissão ML</div>
+        <input type="number" class="param-input" id="pComissao" value="11.5" step="0.5" min="0" max="30" onchange="recalcAll()">
+        <div class="param-sublabel">% sobre preço de venda</div>
+      </div>
+      <div class="param-group">
+        <div class="param-label">ICMS Venda (s/ ST)</div>
+        <input type="number" class="param-input" id="pIcmsVenda" value="18" step="0.5" min="0" max="25" onchange="recalcAll()">
+        <div class="param-sublabel">Só incide se produto NÃO tem ST</div>
+      </div>
+      <div class="param-group">
+        <div class="param-label">PIS (não-cumul.)</div>
+        <input type="number" class="param-input" id="pPis" value="1.65" step="0.01" min="0" max="5" onchange="recalcAll()">
+        <div class="param-sublabel">Débito na venda / Crédito na compra</div>
+      </div>
+      <div class="param-group">
+        <div class="param-label">COFINS (não-cumul.)</div>
+        <input type="number" class="param-input" id="pCofins" value="7.6" step="0.01" min="0" max="15" onchange="recalcAll()">
+        <div class="param-sublabel">Débito na venda / Crédito na compra</div>
+      </div>
+      <div class="param-group">
+        <div class="param-label">IRPJ + CSLL</div>
+        <input type="number" class="param-input highlight-red" id="pIR" value="34" step="1" min="0" max="40" onchange="recalcAll()">
+        <div class="param-sublabel">Sobre lucro operacional · 15%+10%+9%</div>
+      </div>
+      <div class="param-group">
+        <div class="param-label">Frete Padrão</div>
+        <input type="number" class="param-input" id="pFreteDefault" value="0" step="1" min="0" onchange="applyDefaultFreight()">
+        <div class="param-sublabel">R$ · Aplica em todos da aba ativa</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BACKUP BAR -->
+  <div class="backup-bar">
+    <span class="bar-label">💾 Dados</span>
+    <button class="btn-sm btn-excel" onclick="exportExcel('current')" title="Exportar aba ativa para Excel com fórmulas">📗 Excel (Aba Atual)</button>
+    <button class="btn-sm btn-excel" onclick="exportExcel('all')" title="Exportar todas as abas em um único Excel com fórmulas">📗 Excel (Todas as Abas)</button>
+    <span style="width:1px;height:20px;background:var(--border);margin:0 4px"></span>
+    <button class="btn-sm btn-export" onclick="exportJSON()" title="Baixar JSON com todos os preços e fretes">⬇ JSON</button>
+    <button class="btn-sm btn-import" onclick="document.getElementById('importFile').click()" title="Carregar JSON salvo anteriormente">⬆ Importar</button>
+    <input type="file" id="importFile" accept=".json" onchange="importJSON(event)">
+    <button class="btn-sm btn-reset" onclick="resetAll()" title="Zerar tudo e voltar aos valores padrão">✕ Resetar</button>
+    <span class="bar-status" id="saveStatus"></span>
+  </div>
+
+  <!-- FORMULA -->
+  <div class="formula-card" id="formulaCard">
+    <div class="formula-title">📐 Modelo de Cálculo (por unidade)</div>
+    <div class="formula-grid" id="formulaContent"></div>
+  </div>
+
+  <!-- MAIN TABLE -->
+  <div class="section-title"><span>📊</span><h2>Simulação por Produto</h2><div class="line"></div></div>
+  <div class="tbl-wrap"><table id="mainTable"><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table></div>
+
+  <!-- SUMMARY -->
+  <div class="section-title"><span>📈</span><h2>Resumo da Operação (1 un. de cada)</h2><div class="line"></div></div>
+  <div class="summary-grid">
+    <div class="summary-card"><div class="glow" style="background:rgba(16,185,129,0.4)"></div><div class="summary-label">Investimento Total (CMV + Frete)</div><div class="summary-value" id="sumInvestimento" style="color:var(--green)">-</div><div class="summary-sub" id="sumInvestimentoSub"></div></div>
+    <div class="summary-card"><div class="glow" style="background:rgba(59,130,246,0.4)"></div><div class="summary-label">Faturamento Bruto Total</div><div class="summary-value" id="sumFaturamento" style="color:var(--accent)">-</div><div class="summary-sub" id="sumFaturamentoSub"></div></div>
+    <div class="summary-card"><div class="glow" style="background:rgba(139,92,246,0.4)"></div><div class="summary-label">Margem de Contribuição Total</div><div class="summary-value" id="sumMargem" style="color:var(--purple)">-</div><div class="summary-sub" id="sumMargemSub"></div></div>
+    <div class="summary-card"><div class="glow" style="background:rgba(6,182,212,0.4)"></div><div class="summary-label">Lucro Líquido Estimado</div><div class="summary-value" id="sumLucro" style="color:var(--cyan)">-</div><div class="summary-sub" id="sumLucroSub"></div></div>
+  </div>
+
+  <!-- QUICK ANALYSIS -->
+  <div class="section-title"><span>🎯</span><h2>Preço Mínimo Viável & Targets</h2><div class="line"></div></div>
+  <div class="tbl-wrap"><table><thead><tr>
+    <th style="text-align:left;min-width:180px">Produto</th><th>Custo NF Total</th><th>Custo Efetivo</th><th>Preço Min (MC=0)</th><th>Preço p/ 10% ML</th><th>Preço p/ 15% ML</th><th>Preço p/ 20% ML</th><th>Markup Mín.</th>
+  </tr></thead><tbody id="analysisBody"></tbody></table></div>
+
+  <div class="footer"><span>MBDJ · Simulador de Precificação Legrand · Lucro Real · Modelo tributário simplificado — consulte seu contador para apuração definitiva</span></div>
+</div>
+
+<script>
+// ========== SUPPLIER DATA ==========
+
+const SUPPLIERS = {
+  hdl: {
+    name: "HDL / Legrand", badge: "badge-hdl", color: "var(--orange)",
+    cd: "CD Manaus", orcamento: "4504/0164", icmsCompra: 12, hasST: false, hasIPI: false,
+    info: '<div style="font-size:13px;font-weight:600;color:var(--orange)">Fornecedor: HDL Manaus</div><div style="color:var(--dim);font-size:11px">Orç. 4504/0164 · Val. 31/03/2026 · CIF · À Vista</div>',
+    products: [
+      {id:1,desc:"C-90 Fechadura Elet. STD - Cinza",custoICMS:220.61,icms:12,ipi:0,st:0,ncm:"83014000",emb:4},
+      {id:2,desc:"Porteiro Eletr. F8-NTL AZ02 Branco",custoICMS:192.76,icms:12,ipi:0,st:0,ncm:"85176256",emb:6},
+      {id:3,desc:"Interfone AZ-S01 Branco",custoICMS:79.57,icms:12,ipi:0,st:0,ncm:"85176256",emb:12},
+      {id:4,desc:"Porteiro c/ Vídeo CLASS 4.3\" Branco",custoICMS:474.56,icms:12,ipi:0,st:0,ncm:"85171890",emb:2},
+      {id:5,desc:"Contato Deslizante p/ Porta",custoICMS:20.57,icms:12,ipi:0,st:0,ncm:"83016000",emb:12},
+      {id:6,desc:"Porteiro Kit AUDIO CLASS Branco",custoICMS:136.44,icms:12,ipi:0,st:0,ncm:"85176256",emb:4},
+      {id:7,desc:"Fechadura FEC-91LA Esp Longo",custoICMS:83.87,icms:12,ipi:0,st:0,ncm:"83014000",emb:6},
+      {id:8,desc:"C-90 Fechadura Elet. STD - Branca",custoICMS:220.61,icms:12,ipi:0,st:0,ncm:"83014000",emb:4},
+      {id:9,desc:"Porteiro c/ Vídeo ADVANCE 7\" Preto",custoICMS:943.61,icms:12,ipi:0,st:0,ncm:"85171890",emb:2},
+      {id:10,desc:"Interfone AUDIO F8 ADVANCE 1B Preto",custoICMS:89.55,icms:12,ipi:0,st:0,ncm:"85176256",emb:4},
+      {id:11,desc:"Unid. Externa Porteiro AUDIO",custoICMS:101.65,icms:12,ipi:0,st:0,ncm:"85176256",emb:2},
+      {id:12,desc:"C-90 Fechadura Elet. STD - Preta",custoICMS:220.61,icms:12,ipi:0,st:0,ncm:"83014000",emb:4},
+    ]
+  },
+  sms: {
+    name: "SMS / Legrand", badge: "badge-sms", color: "var(--cyan)",
+    cd: "CD Guarulhos", orcamento: "8874/0673", icmsCompra: 18, hasST: true, hasIPI: true,
+    info: '<div style="font-size:13px;font-weight:600;color:var(--cyan)">Fornecedor: SMS Guarulhos (SP)</div><div style="color:var(--dim);font-size:11px">Orç. 8874/0673 · Val. 31/03/2026 · CIF · À Vista</div>',
+    products: [
+      {id:1,desc:"Power Vision UPV2200BI 115",custoICMS:2511.86,icms:18,ipi:9.75,st:272.35,ncm:"85044040",emb:1},
+      {id:2,desc:"Nobreak Lite 1200BI/115",custoICMS:654.78,icms:18,ipi:9.75,st:70.99,ncm:"85044040",emb:1},
+      {id:3,desc:"Nobreak Lite 600BI/115",custoICMS:383.73,icms:18,ipi:9.75,st:41.60,ncm:"85044040",emb:2},
+      {id:4,desc:"Estab. Revolution Speedy 300BI",custoICMS:168.11,icms:12,ipi:9.75,st:11.04,ncm:"90328911",emb:4},
+      {id:5,desc:"Estab. Revolution Speedy 500BI",custoICMS:235.75,icms:12,ipi:9.75,st:15.49,ncm:"90328911",emb:4},
+      {id:6,desc:"Nobreak Pro 1500BI/BI",custoICMS:1045.99,icms:18,ipi:9.75,st:113.41,ncm:"85044040",emb:1},
+      {id:7,desc:"Nobreak Tech 1800BI/115",custoICMS:980.11,icms:18,ipi:9.75,st:106.27,ncm:"85044040",emb:1},
+      {id:8,desc:"Nobreak Gamer 2000BI/BI WIFI",custoICMS:2099.15,icms:18,ipi:9.75,st:227.59,ncm:"85044040",emb:1},
+      {id:9,desc:"Nobreak Pro 1500BI/BI WIFI",custoICMS:1187.47,icms:18,ipi:9.75,st:128.76,ncm:"85044040",emb:1},
+      {id:10,desc:"Power Vision UPV3000BI 115",custoICMS:3238.77,icms:18,ipi:9.75,st:351.16,ncm:"85044040",emb:1},
+      {id:11,desc:"Nobreak Pro 1800BI/BI WIFI",custoICMS:1528.33,icms:18,ipi:9.75,st:165.71,ncm:"85044040",emb:1},
+      {id:12,desc:"Nobreak Tech 1400BI/115",custoICMS:775.04,icms:18,ipi:9.75,st:84.03,ncm:"85044040",emb:1},
+      {id:13,desc:"Nobreak Premium 1500BI/BI WIFI",custoICMS:1801.05,icms:18,ipi:9.75,st:195.27,ncm:"85044040",emb:1},
+      {id:14,desc:"Nobreak Tech 800BI/115",custoICMS:609.93,icms:18,ipi:9.75,st:66.14,ncm:"85044040",emb:2},
+    ]
+  },
+  pial: {
+    name: "Pial / Legrand", badge: "badge-pial", color: "var(--purple)",
+    cd: "CD Guarulhos", orcamento: "8874/0672", icmsCompra: 18, hasST: true, hasIPI: true,
+    info: '<div style="font-size:13px;font-weight:600;color:var(--purple)">Fornecedor: Pial Guarulhos (SP)</div><div style="color:var(--dim);font-size:11px">Orç. 8874/0672 · Val. 31/03/2026 · CIF · À Vista</div>',
+    products: [
+      {id:1,desc:"Tomada 2P+T 10A 4x2 Branca Zeffia",custoICMS:5.81,icms:18,ipi:9.75,st:0.68,ncm:"85366910",emb:20},
+      {id:2,desc:"2 Tomadas 2P+T 10A 4x2 Branca Zeffia",custoICMS:9.32,icms:18,ipi:9.75,st:1.08,ncm:"85366910",emb:20},
+      {id:3,desc:"1 Inter + 1 Tomada 10A 4x2 Zeffia",custoICMS:10.02,icms:18,ipi:3.25,st:0.99,ncm:"85365090",emb:20},
+      {id:4,desc:"Tomada 2P+T 20A 4x2 Branca Zeffia",custoICMS:7.01,icms:18,ipi:9.75,st:0.82,ncm:"85366910",emb:20},
+      {id:5,desc:"Variador Rotativo LED Bivolt Zeffia",custoICMS:62.70,icms:18,ipi:3.25,st:6.19,ncm:"85365090",emb:5},
+      {id:6,desc:"Interruptor Simples 10A Zeffia",custoICMS:4.38,icms:18,ipi:3.25,st:0.43,ncm:"85365090",emb:20},
+      {id:7,desc:"Tomada 2P+T 20A Branca Zeffia",custoICMS:7.04,icms:18,ipi:9.75,st:0.82,ncm:"85366910",emb:20},
+      {id:8,desc:"Saída de Fio 1M Branca Zeffia",custoICMS:2.36,icms:18,ipi:3.25,st:0,ncm:"39259090",emb:20},
+      {id:9,desc:"Placa 1+1 Postos 4x4 Branca Zeffia",custoICMS:6.68,icms:18,ipi:3.25,st:0,ncm:"39259090",emb:10},
+      {id:10,desc:"Placa Cega 4x2 Branca Zeffia",custoICMS:2.49,icms:18,ipi:3.25,st:0,ncm:"39259090",emb:20},
+      {id:11,desc:"Placa 1 Posto 4x2 Branca Zeffia",custoICMS:2.49,icms:18,ipi:3.25,st:0,ncm:"39259090",emb:20},
+      {id:12,desc:"Placa 2 Postos 4x2 Branca Zeffia",custoICMS:2.49,icms:18,ipi:3.25,st:0,ncm:"39259090",emb:20},
+      {id:13,desc:"Placa 3 Postos 4x2 Branca Zeffia",custoICMS:2.49,icms:18,ipi:3.25,st:0,ncm:"39259090",emb:20},
+      {id:14,desc:"Arstop Sob 2DIN c/ Tomada 20A",custoICMS:20.00,icms:18,ipi:9.75,st:2.33,ncm:"85366990",emb:6},
+      {id:15,desc:"Tomada 20A Parafuso Branca PialPlus+",custoICMS:12.20,icms:18,ipi:9.75,st:1.42,ncm:"85366910",emb:20},
+      {id:16,desc:"Inter Simples 10A Parafuso PialPlus+",custoICMS:8.80,icms:18,ipi:3.25,st:0.87,ncm:"85365090",emb:20},
+      {id:17,desc:"Inter Paralelo 10A Parafuso PialPlus+",custoICMS:12.48,icms:18,ipi:3.25,st:1.23,ncm:"85365090",emb:20},
+      {id:18,desc:"Inter Paralelo 10A Automát. PialPlus+",custoICMS:12.48,icms:18,ipi:3.25,st:1.23,ncm:"85365090",emb:20},
+      {id:19,desc:"Inter Bipolar Simples 10A PialPlus+",custoICMS:34.21,icms:18,ipi:3.25,st:3.38,ncm:"85365090",emb:10},
+      {id:20,desc:"Suporte 4x2 PialPlus+",custoICMS:1.29,icms:18,ipi:3.25,st:0,ncm:"39259090",emb:20},
+      {id:21,desc:"Suporte 4x4 PialPlus+",custoICMS:2.59,icms:18,ipi:3.25,st:0,ncm:"39259090",emb:10},
+      {id:22,desc:"Tomada Triplex 2P+T 10A PialPlus+",custoICMS:26.40,icms:18,ipi:9.75,st:3.07,ncm:"85366910",emb:10},
+      {id:23,desc:"1 Inter + 1 Tomada 10A 4x2 PialPlus+",custoICMS:23.28,icms:18,ipi:3.25,st:2.30,ncm:"85365090",emb:20},
+      {id:24,desc:"Tomada 20A Parafuso Vermelha PialPlus+",custoICMS:12.36,icms:18,ipi:9.75,st:1.44,ncm:"85366910",emb:10},
+      {id:25,desc:"Tomada 10A Parafuso Vermelha PialPlus+",custoICMS:12.08,icms:18,ipi:9.75,st:1.41,ncm:"85366910",emb:20},
+      {id:26,desc:"Placa Cega 4x2 Branca PialPlus+",custoICMS:4.23,icms:18,ipi:3.25,st:0,ncm:"39259090",emb:20},
+      {id:27,desc:"Placa 1 Posto 4x2 Branca PialPlus+",custoICMS:4.23,icms:18,ipi:3.25,st:0,ncm:"39259090",emb:20},
+      {id:28,desc:"Placa 2 Postos 4x2 Branca PialPlus+",custoICMS:4.25,icms:18,ipi:3.25,st:0,ncm:"39259090",emb:20},
+      {id:29,desc:"Placa 3 Postos 4x2 Branca PialPlus+",custoICMS:4.25,icms:18,ipi:3.25,st:0,ncm:"39259090",emb:20},
+      {id:30,desc:"Placa 2 Postos Sep. 4x2 Branca PialPlus+",custoICMS:4.23,icms:18,ipi:3.25,st:0,ncm:"39259090",emb:20},
+      {id:31,desc:"Placa 2 Postos Sep. 4x2 Preta PialPlus+",custoICMS:5.08,icms:18,ipi:3.25,st:0,ncm:"39259090",emb:10},
+      {id:32,desc:"Placa Cega 4x4 Branca PialPlus+",custoICMS:10.28,icms:18,ipi:3.25,st:0,ncm:"39259090",emb:10},
+      {id:33,desc:"Placa 2+2 Postos 4x4 Branca PialPlus+",custoICMS:10.28,icms:18,ipi:3.25,st:0,ncm:"39259090",emb:10},
+      {id:34,desc:"Tomada 10A 4x2 Cinza Zeffia",custoICMS:6.39,icms:18,ipi:9.75,st:0.74,ncm:"85366910",emb:20},
+      {id:35,desc:"Adaptador Reverso 2P+T 15A Branco",custoICMS:6.75,icms:18,ipi:9.75,st:0.78,ncm:"85369090",emb:15},
+      {id:36,desc:"Interruptor Simples 10A 4x2 Pial PoP",custoICMS:4.27,icms:18,ipi:3.25,st:0.42,ncm:"85365090",emb:10},
+    ]
+  },
+  vonderSP: {
+    name: "Vonder SP", badge: "badge-vsp", color: "var(--yellow)",
+    cd: "Vonder SP", orcamento: "Análise Margem", icmsCompra: 18, hasST: false, hasIPI: true,
+    ttd478: false, estornoICMS: false,
+    info: '<div style="font-size:13px;font-weight:600;color:var(--yellow)">Fornecedor: Vonder SP (SP→SP)</div><div style="color:var(--dim);font-size:11px">Lucro Real · ICMS 18% · IPI variável · ST=0</div>',
+    products: [
+      {id:1,desc:"Lavadora A.Pressão LAV1600I 220V",custoICMS:388.00,icms:18,ipi:0,st:0,ncm:"84243010",emb:1},
+      {id:2,desc:"Lavadora A.Pressão LAV1300 220V",custoICMS:359.73,icms:18,ipi:0,st:0,ncm:"84243010",emb:1},
+      {id:3,desc:"Parafus/Furad BAT 12V PFV012I C/Imp",custoICMS:252.96,icms:18,ipi:5.2,st:0,ncm:"84672992",emb:1},
+      {id:4,desc:"Parafus/Furad BAT 12V PFV120 Bivolt",custoICMS:196.47,icms:18,ipi:5.2,st:0,ncm:"84672992",emb:1},
+      {id:5,desc:"Parafus/Furad BAT 20V PFV238I C/Imp",custoICMS:297.05,icms:18,ipi:5.2,st:0,ncm:"84672992",emb:1},
+      {id:6,desc:"Pulverizador 5,0L Comp Prévia PL005",custoICMS:61.76,icms:18,ipi:0,st:0,ncm:"84244100",emb:1},
+      {id:7,desc:"Pulverizador Agríc 20,0L PC020",custoICMS:125.52,icms:18,ipi:0,st:0,ncm:"84244100",emb:1},
+      {id:8,desc:"Serra Mármore SMV1300 C/Disco 220V",custoICMS:262.70,icms:18,ipi:5.2,st:0,ncm:"84672200",emb:1},
+      {id:9,desc:"Soq Sext Enc 1/4 JG 04a13mm 33pc",custoICMS:105.62,icms:18,ipi:5.2,st:0,ncm:"82042000",emb:1},
+      {id:10,desc:"Jg Ferramentas C/110pcs",custoICMS:474.72,icms:18,ipi:5.2,st:0,ncm:"82060000",emb:1},
+      {id:11,desc:"Ch Combinada JG 6a32mm CRV Indl",custoICMS:323.22,icms:18,ipi:5.2,st:0,ncm:"82041100",emb:1},
+      {id:12,desc:"Furadeira Imp 3/8 FIV595N 220V",custoICMS:181.10,icms:18,ipi:5.2,st:0,ncm:"84672100",emb:1},
+      {id:13,desc:"Furad/Paraf 3/8 FPV300 220V",custoICMS:156.67,icms:18,ipi:5.2,st:0,ncm:"84672992",emb:1},
+      {id:14,desc:"Soprador Térmico STV200N 220V",custoICMS:139.70,icms:18,ipi:5.2,st:0,ncm:"84672999",emb:1},
+      {id:15,desc:"Parafus Precisão BAT 3,7V Caneta",custoICMS:122.26,icms:18,ipi:5.2,st:0,ncm:"84672992",emb:1},
+      {id:16,desc:"Estilete 18mm ES218",custoICMS:6.93,icms:18,ipi:7.8,st:0,ncm:"82119390",emb:1},
+      {id:17,desc:"Bancada Multiuso BM 600",custoICMS:143.79,icms:18,ipi:3.25,st:0,ncm:"94032090",emb:1},
+      {id:18,desc:"Motocompressor 21,6L MCV216 220V",custoICMS:852.56,icms:18,ipi:0,st:0,ncm:"84148019",emb:1},
+      {id:19,desc:"Serra Esquadria 7.1/4 SEV857 220V",custoICMS:515.74,icms:18,ipi:0,st:0,ncm:"84659120",emb:1},
+      {id:20,desc:"Mochila P/Ferramentas MOV 0200",custoICMS:133.48,icms:18,ipi:6.5,st:0,ncm:"42029200",emb:1},
+      {id:21,desc:"Trena Aço Emborrachada 10m x 25mm",custoICMS:21.79,icms:18,ipi:9.75,st:0,ncm:"90178010",emb:1},
+      {id:22,desc:"Bits/Ponteira CRV C/10pc Enc 1/4",custoICMS:9.54,icms:18,ipi:5.2,st:0,ncm:"82079000",emb:1},
+      {id:23,desc:"Parafus/Furad BAT 12V PFV120I C/Imp",custoICMS:226.87,icms:18,ipi:5.2,st:0,ncm:"84672992",emb:1},
+      {id:24,desc:"Parafus/Furad BAT 20V PFV238I (Mag)",custoICMS:297.05,icms:18,ipi:5.2,st:0,ncm:"84672992",emb:1},
+      {id:25,desc:"Parafus/Furad BAT 12V PFV120I (Mag)",custoICMS:226.87,icms:18,ipi:5.2,st:0,ncm:"84672992",emb:1},
+      {id:26,desc:"Parafus/Furad BAT 12V PFV012I (Mag)",custoICMS:252.96,icms:18,ipi:5.2,st:0,ncm:"84672992",emb:1},
+    ]
+  },
+  vonderSC: {
+    name: "Vonder SC (TTD 478)", badge: "badge-vsc", color: "var(--green)",
+    cd: "Vonder SC", orcamento: "Análise Margem SC", icmsCompra: 12, hasST: false, hasIPI: true,
+    ttd478: true, estornoICMS: true, icmsVendaEfetiva: 0.024,
+    info: '<div style="font-size:13px;font-weight:600;color:var(--green)">Fornecedor: Vonder SC (TTD 478 · SC→PF)</div><div style="color:var(--dim);font-size:11px">ICMS compra 12% (estornado) · ICMS venda 2% + 0,4% fundos = 2,4% · Sem DIFAL p/ PF</div>',
+    products: [
+      {id:1,desc:"Lavadora A.Pressão LAV1600I 220V",custoICMS:361.55,icms:12,ipi:0,st:0,ncm:"84243010",emb:1},
+      {id:2,desc:"Lavadora A.Pressão LAV1300 220V",custoICMS:335.20,icms:12,ipi:0,st:0,ncm:"84243010",emb:1},
+      {id:3,desc:"Parafus/Furad BAT 12V PFV012I C/Imp",custoICMS:235.71,icms:12,ipi:5.2,st:0,ncm:"84672992",emb:1},
+      {id:4,desc:"Parafus/Furad BAT 12V PFV120 Bivolt",custoICMS:183.07,icms:12,ipi:5.2,st:0,ncm:"84672992",emb:1},
+      {id:5,desc:"Parafus/Furad BAT 20V PFV238I C/Imp",custoICMS:276.80,icms:12,ipi:5.2,st:0,ncm:"84672992",emb:1},
+      {id:6,desc:"Pulverizador 5,0L Comp Prévia PL005",custoICMS:57.55,icms:12,ipi:0,st:0,ncm:"84244100",emb:1},
+      {id:7,desc:"Pulverizador Agríc 20,0L PC020",custoICMS:116.96,icms:12,ipi:0,st:0,ncm:"84244100",emb:1},
+      {id:8,desc:"Serra Mármore SMV1300 C/Disco 220V",custoICMS:244.79,icms:12,ipi:5.2,st:0,ncm:"84672200",emb:1},
+      {id:9,desc:"Soq Sext Enc 1/4 JG 04a13mm 33pc",custoICMS:98.42,icms:12,ipi:5.2,st:0,ncm:"82042000",emb:1},
+      {id:10,desc:"Jg Ferramentas C/110pcs",custoICMS:442.35,icms:12,ipi:5.2,st:0,ncm:"82060000",emb:1},
+      {id:11,desc:"Ch Combinada JG 6a32mm CRV Indl",custoICMS:301.18,icms:12,ipi:5.2,st:0,ncm:"82041100",emb:1},
+      {id:12,desc:"Furadeira Imp 3/8 FIV595N 220V",custoICMS:168.75,icms:12,ipi:5.2,st:0,ncm:"84672100",emb:1},
+      {id:13,desc:"Furad/Paraf 3/8 FPV300 220V",custoICMS:145.99,icms:12,ipi:5.2,st:0,ncm:"84672992",emb:1},
+      {id:14,desc:"Soprador Térmico STV200N 220V",custoICMS:130.18,icms:12,ipi:5.2,st:0,ncm:"84672999",emb:1},
+      {id:15,desc:"Parafus Precisão BAT 3,7V Caneta",custoICMS:113.92,icms:12,ipi:5.2,st:0,ncm:"84672992",emb:1},
+      {id:16,desc:"Estilete 18mm ES218",custoICMS:6.46,icms:12,ipi:7.8,st:0,ncm:"82119390",emb:1},
+      {id:17,desc:"Bancada Multiuso BM 600",custoICMS:133.99,icms:12,ipi:3.25,st:0,ncm:"94032090",emb:1},
+      {id:18,desc:"Motocompressor 21,6L MCV216 220V",custoICMS:794.43,icms:12,ipi:0,st:0,ncm:"84148019",emb:1},
+      {id:19,desc:"Serra Esquadria 7.1/4 SEV857 220V",custoICMS:480.58,icms:12,ipi:0,st:0,ncm:"84659120",emb:1},
+      {id:20,desc:"Mochila P/Ferramentas MOV 0200",custoICMS:124.38,icms:12,ipi:6.5,st:0,ncm:"42029200",emb:1},
+      {id:21,desc:"Trena Aço Emborrachada 10m x 25mm",custoICMS:20.30,icms:12,ipi:9.75,st:0,ncm:"90178010",emb:1},
+      {id:22,desc:"Bits/Ponteira CRV C/10pc Enc 1/4",custoICMS:8.89,icms:12,ipi:5.2,st:0,ncm:"82079000",emb:1},
+      {id:23,desc:"Parafus/Furad BAT 12V PFV120I C/Imp",custoICMS:211.40,icms:12,ipi:5.2,st:0,ncm:"84672992",emb:1},
+      {id:24,desc:"Parafus/Furad BAT 20V PFV238I (Mag)",custoICMS:276.80,icms:12,ipi:5.2,st:0,ncm:"84672992",emb:1},
+      {id:25,desc:"Parafus/Furad BAT 12V PFV120I (Mag)",custoICMS:211.40,icms:12,ipi:5.2,st:0,ncm:"84672992",emb:1},
+      {id:26,desc:"Parafus/Furad BAT 12V PFV012I (Mag)",custoICMS:235.71,icms:12,ipi:5.2,st:0,ncm:"84672992",emb:1},
+    ]
+  }
+};
+
+// === STATE ===
+let activeTab = 'hdl';
+const state = {};
+Object.keys(SUPPLIERS).forEach(key => {
+  state[key] = {};
+  SUPPLIERS[key].products.forEach(p => {
+    const hasST = p.st > 0;
+    const ipiAmt = p.custoICMS * (p.ipi / 100);
+    const custoNFTotal = p.custoICMS + ipiAmt + p.st;
+    state[key][p.id] = { pv: Math.round(custoNFTotal * 2.2 / 5) * 5 || 5, frete: 0 };
+  });
+});
+
+// === HELPERS ===
+const fmt = v => "R$ " + Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtS = v => "R$ " + Number(v).toLocaleString("pt-BR",{minimumFractionDigits:0,maximumFractionDigits:0});
+const fmtPct = v => v.toFixed(2)+"%";
+function marginClass(pct) { return pct>=15?'margin-great':pct>=8?'margin-pos':pct>=0?'margin-warn':'margin-neg'; }
+
+function getParams() {
+  return {
+    comissao: parseFloat(document.getElementById('pComissao').value)/100,
+    icmsVenda: parseFloat(document.getElementById('pIcmsVenda').value)/100,
+    pis: parseFloat(document.getElementById('pPis').value)/100,
+    cofins: parseFloat(document.getElementById('pCofins').value)/100,
+    ir: parseFloat(document.getElementById('pIR').value)/100,
+  };
+}
+
+function calcProduct(sup, p, params) {
+  const s = state[activeTab][p.id];
+  const pv = s.pv;
+  const frete = s.frete;
+  const hasST = p.st > 0;
+
+  // ENTRADA
+  const ipiAmt = p.custoICMS * (p.ipi / 100);           // IPI: custo (não recuperável p/ revenda)
+  const custoNFTotal = p.custoICMS + ipiAmt + p.st;      // Total pago ao fornecedor por unidade
+
+  const creditoICMS = sup.estornoICMS ? 0 : p.custoICMS * (p.icms / 100);      // Crédito ICMS sobre valor produtos
+  const creditoPIS = p.custoICMS * params.pis;            // Crédito PIS sobre valor produtos
+  const creditoCOFINS = p.custoICMS * params.cofins;      // Crédito COFINS sobre valor produtos
+  const totalCreditos = creditoICMS + creditoPIS + creditoCOFINS;
+  const custoEfetivo = custoNFTotal - totalCreditos + frete;
+
+  // SAÍDA
+  const icmsDebito = hasST ? 0 : pv * (sup.icmsVendaEfetiva || params.icmsVenda);  // Se tem ST, ICMS já foi pago
+  const pisDebito = pv * params.pis;
+  const cofinsDebito = pv * params.cofins;
+  const comissaoML = pv * params.comissao;
+  const totalDeducoes = icmsDebito + pisDebito + cofinsDebito + comissaoML;
+  const receitaLiquida = pv - totalDeducoes;
+
+  // RESULTADO
+  const margemContrib = receitaLiquida - custoEfetivo;
+  const mcPct = pv > 0 ? (margemContrib / pv) * 100 : 0;
+  const ircsll = margemContrib > 0 ? margemContrib * params.ir : 0;
+  const lucroLiquido = margemContrib - ircsll;
+  const mlPct = pv > 0 ? (lucroLiquido / pv) * 100 : 0;
+
+  return { custoICMS:p.custoICMS, ipiAmt, stAmt:p.st, custoNFTotal, totalCreditos, custoEfetivo,
+    pv, frete, hasST, icmsDebito, pisCofDebito:pisDebito+cofinsDebito, comissaoML, totalDeducoes,
+    receitaLiquida, margemContrib, mcPct, ircsll, lucroLiquido, mlPct };
+}
+
+// === RENDER ===
+function renderHeader() {
+  const sup = SUPPLIERS[activeTab];
+  const b = document.getElementById('headerBadge');
+  b.textContent = sup.name;
+  b.className = 'badge ' + sup.badge;
+  document.getElementById('headerInfo').innerHTML = sup.info;
+}
+
+function renderFormula() {
+  const sup = SUPPLIERS[activeTab];
+  const hasIPIST = sup.hasIPI || sup.hasST;
+  const entradaExtra = hasIPIST ?
+    `<span class="op">+</span> IPI (não recuperável p/ revenda)<br><span class="op">+</span> ICMS-ST (pago antecipado)<br>` : '';
+  const saidaSC = sup.ttd478 ?
+    `<span class="debit">ICMS TTD 478</span> = PV × <strong>2,4%</strong> (2% efetivo + 0,4% fundos)<br><span style="color:var(--green);font-size:9px">⚠ SEM DIFAL para PF · Crédito ICMS entrada ESTORNADO</span><br>` : '';
+  const saidaST = sup.hasST ?
+    `<span class="debit">ICMS débito</span> = <strong>ZERO se produto tem ST</strong><br>` :
+    `<span class="debit">ICMS débito</span> = PV × ${(parseFloat(document.getElementById('pIcmsVenda').value))}%<br>`;
+
+  document.getElementById('formulaContent').innerHTML = `
+    <div class="formula-block">
+      <h4 style="color:var(--green)">📥 Custo Efetivo (Entrada)</h4>
+      <p>Custo Produto c/ ICMS ${sup.icmsCompra}%<br>
+      ${entradaExtra}
+      <span class="op">−</span> <span class="credit">Crédito ICMS</span> = CustoProd × ${sup.icmsCompra}%${sup.estornoICMS?' <span style="color:var(--red)">(ESTORNADO pelo TTD 478 = R$ 0)</span>':''}<br>
+      <span class="op">−</span> <span class="credit">Crédito PIS</span> = CustoProd × 1,65%<br>
+      <span class="op">−</span> <span class="credit">Crédito COFINS</span> = CustoProd × 7,6%<br>
+      <span class="op">+</span> Frete imputado<br>
+      <span class="op">=</span> <strong>Custo Total Efetivo</strong></p>
+    </div>
+    <div class="formula-block">
+      <h4 style="color:var(--red)">📤 Deduções na Venda (Saída)</h4>
+      <p>Preço de Venda (PV)<br>
+      <span class="op">−</span> ${sup.ttd478 ? saidaSC : saidaST}
+      <span class="op">−</span> <span class="debit">PIS débito</span> = PV × 1,65%<br>
+      <span class="op">−</span> <span class="debit">COFINS débito</span> = PV × 7,6%<br>
+      <span class="op">−</span> <span class="debit">Comissão ML</span> = PV × 11,5%<br>
+      <span class="op">=</span> <strong>Receita Líquida Efetiva</strong></p>
+    </div>
+    <div class="formula-block">
+      <h4 style="color:var(--purple)">💰 Resultado</h4>
+      <p>Margem = Rec.Líq − Custo Efetivo<br>
+      <span class="op">−</span> IRPJ/CSLL = 34% × Margem (se &gt; 0)<br>
+      <span class="op">=</span> <strong>Lucro Líquido Estimado</strong><br>
+      <span class="op">=</span> ML% = Lucro / PV</p>
+    </div>`;
+}
+
+function renderTable() {
+  const sup = SUPPLIERS[activeTab];
+  const params = getParams();
+  const hasIPIST = sup.hasIPI || sup.hasST;
+
+  // HEAD
+  const entradaCols = hasIPIST ? 5 : 3;
+  let headHtml = `<tr>
+    <th colspan="2" class="col-group-header" style="text-align:left!important">Produto</th>
+    <th colspan="${entradaCols}" class="col-group-header col-group-entrada">📥 Entrada</th>
+    <th colspan="2" class="col-group-header" style="background:rgba(249,115,22,0.04)!important;color:var(--orange)!important;border-bottom-color:rgba(249,115,22,0.2)!important">Simulação</th>
+    <th colspan="4" class="col-group-header col-group-saida">📤 Deduções Venda</th>
+    <th colspan="3" class="col-group-header col-group-resultado">💰 Resultado</th>
+  </tr><tr>
+    <th style="text-align:center;width:30px">#</th>
+    <th style="text-align:left;min-width:180px">Descrição</th>
+    <th class="col-separator">Custo Prod</th>`;
+  if (hasIPIST) headHtml += `<th>IPI</th><th>ST</th>`;
+  headHtml += `<th>Créditos</th><th>CMV Efet.</th>
+    <th class="col-separator">Frete</th><th>Preço Venda</th>
+    <th class="col-separator">ICMS Déb.</th><th>PIS+COF</th><th>Comissão</th><th>Rec.Líq.</th>
+    <th class="col-separator">Margem</th><th>IR/CSLL</th><th>Lucro Líq. (%)</th></tr>`;
+  document.getElementById('tableHead').innerHTML = headHtml;
+
+  // BODY
+  const tbody = document.getElementById('tableBody');
+  let html = '';
+  let T = {custoICMS:0,ipi:0,st:0,custoNF:0,cred:0,cmv:0,frete:0,pv:0,icmsD:0,pisCof:0,com:0,recLiq:0,marg:0,ir:0,lucro:0};
+
+  sup.products.forEach(p => {
+    const c = calcProduct(sup, p, params);
+    T.custoICMS+=c.custoICMS; T.ipi+=c.ipiAmt; T.st+=c.stAmt; T.custoNF+=c.custoNFTotal;
+    T.cred+=c.totalCreditos; T.cmv+=c.custoEfetivo; T.frete+=c.frete; T.pv+=c.pv;
+    T.icmsD+=c.icmsDebito; T.pisCof+=c.pisCofDebito; T.com+=c.comissaoML;
+    T.recLiq+=c.receitaLiquida; T.marg+=c.margemContrib; T.ir+=c.ircsll; T.lucro+=c.lucroLiquido;
+
+    const stTag = c.hasST ? '<span class="st-badge has-st">ST</span>' : (hasIPIST ? '<span class="st-badge no-st">—</span>' : '');
+    const pvClass = c.lucroLiquido < 0 ? 'negative' : '';
+    const icmsCell = c.hasST ? '<span style="color:var(--green);font-size:10px">ST PAGO</span>' : '-'+fmt(c.icmsDebito);
+
+    html += `<tr>
+      <td>${p.id}</td>
+      <td title="NCM ${p.ncm} · Emb ${p.emb}un">${p.desc}${stTag}</td>
+      <td class="col-separator" style="color:var(--muted)">${fmt(c.custoICMS)}</td>`;
+    if (hasIPIST) html += `<td style="color:var(--dim)">${c.ipiAmt>0?'+'+fmt(c.ipiAmt):'—'}</td><td style="color:var(--orange)">${c.stAmt>0?'+'+fmt(c.stAmt):'—'}</td>`;
+    html += `<td style="color:var(--green)">-${fmt(c.totalCreditos)}</td>
+      <td style="font-weight:600">${fmt(c.custoEfetivo)}</td>
+      <td class="col-separator"><input type="number" class="freight-input" value="${c.frete}" min="0" step="1" data-id="${p.id}" onchange="updateFreight(this)"></td>
+      <td><input type="number" class="price-input ${pvClass}" value="${c.pv}" min="0" step="5" data-id="${p.id}" onchange="updatePrice(this)"></td>
+      <td class="col-separator" style="color:var(--red)">${icmsCell}</td>
+      <td style="color:var(--red)">-${fmt(c.pisCofDebito)}</td>
+      <td style="color:var(--red)">-${fmt(c.comissaoML)}</td>
+      <td style="font-weight:600">${fmt(c.receitaLiquida)}</td>
+      <td class="col-separator ${marginClass(c.mcPct)}">${fmt(c.margemContrib)}</td>
+      <td style="color:var(--dim)">-${fmt(c.ircsll)}</td>
+      <td class="${marginClass(c.mlPct)}" style="font-size:12px">${fmt(c.lucroLiquido)} <span style="font-size:10px;opacity:0.7">(${fmtPct(c.mlPct)})</span></td>
+    </tr>`;
+  });
+
+  const totalMlPct = T.pv>0?(T.lucro/T.pv)*100:0;
+  html += `<tr class="total-row"><td></td><td style="text-align:left;font-weight:800">TOTAL (1 un. cada)</td>
+    <td class="col-separator">${fmt(T.custoICMS)}</td>`;
+  if(hasIPIST) html += `<td>${fmt(T.ipi)}</td><td style="color:var(--orange)">${fmt(T.st)}</td>`;
+  html += `<td style="color:var(--green)">-${fmt(T.cred)}</td><td>${fmt(T.cmv)}</td>
+    <td class="col-separator">${fmt(T.frete)}</td><td style="color:var(--accent);font-weight:800">${fmt(T.pv)}</td>
+    <td class="col-separator" style="color:var(--red)">-${fmt(T.icmsD)}</td><td style="color:var(--red)">-${fmt(T.pisCof)}</td><td style="color:var(--red)">-${fmt(T.com)}</td><td>${fmt(T.recLiq)}</td>
+    <td class="col-separator ${marginClass(T.pv>0?(T.marg/T.pv)*100:0)}">${fmt(T.marg)}</td><td style="color:var(--dim)">-${fmt(T.ir)}</td>
+    <td class="${marginClass(totalMlPct)}" style="font-size:12px">${fmt(T.lucro)} <span style="font-size:10px;opacity:0.7">(${fmtPct(totalMlPct)})</span></td></tr>`;
+  tbody.innerHTML = html;
+
+  // SUMMARY
+  const n = sup.products.length;
+  document.getElementById('sumInvestimento').textContent = fmtS(T.cmv);
+  document.getElementById('sumInvestimentoSub').textContent = `CMV efetivo: ${fmtS(T.custoNF-T.cred)} + Frete: ${fmtS(T.frete)}`;
+  document.getElementById('sumFaturamento').textContent = fmtS(T.pv);
+  document.getElementById('sumFaturamentoSub').textContent = `${n} SKUs · Deduções: ${fmtS(T.icmsD+T.pisCof+T.com)}`;
+  document.getElementById('sumMargem').textContent = fmtS(T.marg);
+  document.getElementById('sumMargemSub').textContent = `MC% = ${fmtPct(T.pv>0?(T.marg/T.pv)*100:0)}`;
+  document.getElementById('sumLucro').textContent = fmtS(T.lucro);
+  document.getElementById('sumLucro').style.color = T.lucro>=0?'var(--cyan)':'var(--red)';
+  document.getElementById('sumLucroSub').textContent = `ML% = ${fmtPct(totalMlPct)} · IRPJ/CSLL: ${fmtS(T.ir)}`;
+}
+
+function renderAnalysis() {
+  const sup = SUPPLIERS[activeTab];
+  const params = getParams();
+  const tbody = document.getElementById('analysisBody');
+  let html = '';
+
+  sup.products.forEach(p => {
+    const s = state[activeTab][p.id];
+    const hasST = p.st > 0;
+    const ipiAmt = p.custoICMS * (p.ipi / 100);
+    const custoNFTotal = p.custoICMS + ipiAmt + p.st;
+    const creditos = p.custoICMS * ((p.icms/100) + params.pis + params.cofins);
+    const custoEfetivo = custoNFTotal - creditos + s.frete;
+
+    // Deduction rate on PV depends on ST
+    const deducRate = (hasST ? 0 : (sup.icmsVendaEfetiva||params.icmsVenda)) + params.pis + params.cofins + params.comissao;
+    const netRate = 1 - deducRate;
+
+    const pvMin = netRate > 0 ? custoEfetivo / netRate : Infinity;
+
+    function pvTarget(targetMl) {
+      const t = targetMl/100;
+      const d = netRate*(1-params.ir) - t;
+      return d > 0 ? custoEfetivo*(1-params.ir)/d : Infinity;
+    }
+
+    const markup = pvMin > 0 && custoNFTotal > 0 ? ((pvMin/custoNFTotal)-1)*100 : 0;
+    const f = v => v===Infinity?'—':fmt(v);
+
+    html += `<tr>
+      <td style="text-align:left;font-family:'DM Sans',sans-serif;font-weight:600;font-size:11px">${p.desc}${hasST?'<span class="st-badge has-st" style="margin-left:4px">ST</span>':''}</td>
+      <td style="color:var(--muted)">${fmt(custoNFTotal)}</td>
+      <td style="font-weight:600">${fmt(custoEfetivo)}</td>
+      <td style="color:var(--yellow);font-weight:600">${f(pvMin)}</td>
+      <td style="color:var(--green)">${f(pvTarget(10))}</td>
+      <td style="color:var(--cyan)">${f(pvTarget(15))}</td>
+      <td style="color:var(--purple)">${f(pvTarget(20))}</td>
+      <td style="color:var(--orange);font-weight:600">${markup===Infinity?'—':markup.toFixed(0)+'%'}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+}
+
+// === PERSISTENCE: localStorage ===
+const LS_KEY = 'mbdj_precificacao_legrand_v1';
+const LS_PARAMS_KEY = 'mbdj_precificacao_params_v1';
+
+function saveToLS() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+    const params = {
+      comissao: document.getElementById('pComissao').value,
+      icmsVenda: document.getElementById('pIcmsVenda').value,
+      pis: document.getElementById('pPis').value,
+      cofins: document.getElementById('pCofins').value,
+      ir: document.getElementById('pIR').value,
+      freteDefault: document.getElementById('pFreteDefault').value,
+    };
+    localStorage.setItem(LS_PARAMS_KEY, JSON.stringify(params));
+    showSaveStatus('✅ Salvo');
+  } catch(e) { console.warn('localStorage save failed', e); }
+}
+
+function loadFromLS() {
+  try {
+    const saved = localStorage.getItem(LS_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      Object.keys(parsed).forEach(sup => {
+        if (state[sup]) {
+          Object.keys(parsed[sup]).forEach(id => {
+            if (state[sup][id]) {
+              state[sup][id].pv = parsed[sup][id].pv ?? state[sup][id].pv;
+              state[sup][id].frete = parsed[sup][id].frete ?? state[sup][id].frete;
+            }
+          });
+        }
+      });
+    }
+    const savedParams = localStorage.getItem(LS_PARAMS_KEY);
+    if (savedParams) {
+      const p = JSON.parse(savedParams);
+      if (p.comissao) document.getElementById('pComissao').value = p.comissao;
+      if (p.icmsVenda) document.getElementById('pIcmsVenda').value = p.icmsVenda;
+      if (p.pis) document.getElementById('pPis').value = p.pis;
+      if (p.cofins) document.getElementById('pCofins').value = p.cofins;
+      if (p.ir) document.getElementById('pIR').value = p.ir;
+      if (p.freteDefault) document.getElementById('pFreteDefault').value = p.freteDefault;
+    }
+    if (saved) showSaveStatus('📂 Dados restaurados');
+  } catch(e) { console.warn('localStorage load failed', e); }
+}
+
+function showSaveStatus(msg) {
+  const el = document.getElementById('saveStatus');
+  el.innerHTML = `<span class="saved">${msg}</span>`;
+  clearTimeout(el._timeout);
+  el._timeout = setTimeout(() => { el.textContent = ''; }, 3000);
+}
+
+// === PERSISTENCE: Export/Import JSON ===
+function exportJSON() {
+  const params = {
+    comissao: document.getElementById('pComissao').value,
+    icmsVenda: document.getElementById('pIcmsVenda').value,
+    pis: document.getElementById('pPis').value,
+    cofins: document.getElementById('pCofins').value,
+    ir: document.getElementById('pIR').value,
+    freteDefault: document.getElementById('pFreteDefault').value,
+  };
+  const data = { version: 1, exportDate: new Date().toISOString(), params, state };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `MBDJ_Precificacao_Legrand_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showSaveStatus('⬇ JSON exportado');
+}
+
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.state) {
+        Object.keys(data.state).forEach(sup => {
+          if (state[sup]) {
+            Object.keys(data.state[sup]).forEach(id => {
+              if (state[sup][id]) {
+                state[sup][id].pv = data.state[sup][id].pv ?? state[sup][id].pv;
+                state[sup][id].frete = data.state[sup][id].frete ?? state[sup][id].frete;
+              }
+            });
+          }
+        });
+      }
+      if (data.params) {
+        const p = data.params;
+        if (p.comissao) document.getElementById('pComissao').value = p.comissao;
+        if (p.icmsVenda) document.getElementById('pIcmsVenda').value = p.icmsVenda;
+        if (p.pis) document.getElementById('pPis').value = p.pis;
+        if (p.cofins) document.getElementById('pCofins').value = p.cofins;
+        if (p.ir) document.getElementById('pIR').value = p.ir;
+        if (p.freteDefault) document.getElementById('pFreteDefault').value = p.freteDefault;
+      }
+      saveToLS();
+      recalcAll();
+      renderTable();
+      showSaveStatus('⬆ JSON importado com sucesso');
+    } catch(err) { alert('Erro ao ler JSON: ' + err.message); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function resetAll() {
+  if (!confirm('Resetar todos os preços e fretes para os valores padrão?\nIsso apaga os dados salvos no navegador.')) return;
+  localStorage.removeItem(LS_KEY);
+  localStorage.removeItem(LS_PARAMS_KEY);
+  localStorage.removeItem(LS_PARAMS_KEY);
+  Object.keys(SUPPLIERS).forEach(key => {
+    SUPPLIERS[key].products.forEach(p => {
+      const ipiAmt = p.custoICMS * (p.ipi / 100);
+      const custoNFTotal = p.custoICMS + ipiAmt + p.st;
+      state[key][p.id] = { pv: Math.round(custoNFTotal * 2.2 / 5) * 5 || 5, frete: 0 };
+    });
+  });
+  document.getElementById('pComissao').value = '11.5';
+  document.getElementById('pIcmsVenda').value = '18';
+  document.getElementById('pPis').value = '1.65';
+  document.getElementById('pCofins').value = '7.6';
+  document.getElementById('pIR').value = '34';
+  document.getElementById('pFreteDefault').value = '0';
+  recalcAll();
+  renderTable();
+  showSaveStatus('🗑 Dados resetados');
+}
+
+// === INTERACTIONS ===
+function switchTab(key, el) {
+  activeTab = key;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderHeader(); renderFormula(); renderTable(); renderAnalysis();
+}
+
+function updatePrice(el) {
+  state[activeTab][parseInt(el.dataset.id)].pv = parseFloat(el.value)||0;
+  renderTable(); renderAnalysis(); saveToLS();
+}
+function updateFreight(el) {
+  state[activeTab][parseInt(el.dataset.id)].frete = parseFloat(el.value)||0;
+  renderTable(); renderAnalysis(); saveToLS();
+}
+function applyDefaultFreight() {
+  const v = parseFloat(document.getElementById('pFreteDefault').value)||0;
+  SUPPLIERS[activeTab].products.forEach(p=>{state[activeTab][p.id].frete=v;});
+  renderTable(); renderAnalysis(); saveToLS();
+}
+function recalcAll() { renderFormula(); renderTable(); renderAnalysis(); saveToLS(); }
+
+
+// === EXCEL EXPORT — ESPELHO DO SIMULADOR ===
+async function exportExcel(mode) {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'MBDJ Simulador';
+  wb.created = new Date();
+  const tabs = mode === 'all' ? ['hdl','sms','pial','vonderSP','vonderSC'] : [activeTab];
+  const params = getParams();
+
+  const B = s => ({style:'thin',color:{argb:'FFD0D5DD'}});
+  const borders = {top:B(),left:B(),bottom:B(),right:B()};
+  const F = a => ({type:'pattern',pattern:'solid',fgColor:{argb:'FF'+a}});
+  const font = (o={}) => ({name:'Calibri',size:10,...o});
+  const CLR = {hdr:'1E293B',sub:'334155',white:'FFFFFF',green:'10B981',red:'EF4444',
+    yellow:'D97706',purple:'8B5CF6',orange:'F97316',cyan:'0891B2',accent:'3B82F6',
+    dim:'64748B',muted:'94A3B8',light:'F8FAFC',alt:'F1F5F9',inputBg:'DBEAFE',freightBg:'FFF3E0',paramBg:'FFFFF0'};
+
+  const savedTab = activeTab;
+
+  for (const key of tabs) {
+    activeTab = key; // calcProduct reads state[activeTab]
+    const sup = SUPPLIERS[key];
+    const stt = state[key];
+    const hasIPIST = sup.hasIPI || sup.hasST;
+    const sheetName = key==='hdl'?'HDL Manaus':key==='sms'?'SMS Guarulhos':'Pial Guarulhos';
+    const ws = wb.addWorksheet(sheetName);
+    ws.views = [{showGridLines:false}];
+    let R = 1;
+
+    // ── HEADER ──
+    ws.mergeCells(R,1,R,10);
+    ws.getCell(R,1).value = `MBDJ · Simulador de Precificação · ${sup.name}`;
+    ws.getCell(R,1).font = font({size:15,bold:true,color:{argb:'FF'+CLR.white}});
+    const maxC = hasIPIST?20:17;
+    for(let c=1;c<=maxC;c++){ws.getCell(R,c).fill=F(CLR.hdr);ws.getCell(R,c).border=borders;}
+    R++;
+    ws.mergeCells(R,1,R,10);
+    ws.getCell(R,1).value = `${sup.cd} · Orç. ${sup.orcamento} · Val. 31/03/2026 · CIF · À Vista · Lucro Real`;
+    ws.getCell(R,1).font = font({size:10,color:{argb:'FF'+CLR.muted}});
+    for(let c=1;c<=maxC;c++){ws.getCell(R,c).fill=F(CLR.hdr);ws.getCell(R,c).border=borders;}
+    R+=2;
+
+    // ── PARÂMETROS ──
+    ws.mergeCells(R,1,R,3);
+    ws.getCell(R,1).value = '⚙️ PARÂMETROS DA OPERAÇÃO';
+    ws.getCell(R,1).font = font({size:11,bold:true,color:{argb:'FF'+CLR.accent}});
+    R++;
+    const pStart = R;
+    const pDefs = [
+      ['Comissão ML',params.comissao,'% sobre preço de venda'],
+      ['ICMS Venda (s/ ST)',sup.icmsVendaEfetiva||params.icmsVenda,sup.ttd478?'TTD 478: 2% + 0,4% fundos = 2,4% · Sem DIFAL PF':'Débito na saída (0 se produto tem ST)'],
+      ['PIS (não-cumulativo)',params.pis,'Débito venda / Crédito compra'],
+      ['COFINS (não-cumulativo)',params.cofins,'Débito venda / Crédito compra'],
+      ['IRPJ + CSLL',params.ir,'Sobre lucro operacional (15%+10%+9%)'],
+      ['ICMS Compra (NF)',sup.estornoICMS?0:sup.icmsCompra/100,sup.estornoICMS?`${sup.cd} · 12% ESTORNADO pelo TTD 478 = 0% efetivo`:`Crédito na entrada · ${sup.cd}`],
+    ];
+    const PR = {}; const pN = ['comissao','icmsVenda','pis','cofins','ir','icmsCompra'];
+    pDefs.forEach(([lbl,val,note],i) => {
+      const r = pStart+i;
+      PR[pN[i]] = `$B$${r}`;
+      ws.getCell(r,1).value=lbl; ws.getCell(r,1).font=font({bold:true}); ws.getCell(r,1).fill=F(CLR.light);
+      ws.getCell(r,2).value=val; ws.getCell(r,2).numFmt='0.00%';
+      ws.getCell(r,2).font=font({bold:true,color:{argb:'FF0000FF'}}); ws.getCell(r,2).fill=F(CLR.paramBg);
+      ws.getCell(r,3).value=note; ws.getCell(r,3).font=font({size:9,italic:true,color:{argb:'FF'+CLR.dim}});
+      for(let c=1;c<=3;c++) ws.getCell(r,c).border=borders;
+    });
+    R = pStart + pDefs.length + 1;
+
+    // ── TABELA PRINCIPAL ──
+    ws.mergeCells(R,1,R,6);
+    ws.getCell(R,1).value = '📊 SIMULAÇÃO POR PRODUTO';
+    ws.getCell(R,1).font = font({size:11,bold:true,color:{argb:'FF'+CLR.accent}});
+    R++;
+
+    let cols, grps;
+    if(!hasIPIST) {
+      cols = ['#','Descrição','NCM','Custo NF\n(c/ ICMS)','Créditos\nTributários','CMV\nLíquido',
+        'Frete','CMV\nEfetivo','Preço de\nVenda','ICMS\nDébito','PIS+COF\nDébito','Comissão\nML',
+        'Receita\nLíquida','Margem de\nContribuição','IRPJ\n+CSLL','Lucro\nLíquido','ML%'];
+      grps = [{s:1,e:3,t:'PRODUTO',cl:CLR.white},{s:4,e:6,t:'📥 ENTRADA',cl:CLR.green},
+        {s:7,e:9,t:'⚙️ SIMULAÇÃO',cl:CLR.orange},{s:10,e:13,t:'📤 DEDUÇÕES VENDA',cl:CLR.red},
+        {s:14,e:17,t:'💰 RESULTADO',cl:CLR.purple}];
+    } else {
+      cols = ['#','Descrição','NCM','Custo Prod.\n(c/ ICMS)','% IPI','Valor\nIPI','ICMS-ST\n(pago)',
+        'Custo NF\nTotal','Créditos\nTributários','Frete','CMV\nEfetivo','Preço de\nVenda',
+        'ICMS\nDébito','PIS+COF\nDébito','Comissão\nML','Receita\nLíquida','Margem de\nContribuição',
+        'IRPJ\n+CSLL','Lucro\nLíquido','ML%'];
+      grps = [{s:1,e:3,t:'PRODUTO',cl:CLR.white},{s:4,e:9,t:'📥 ENTRADA (c/ IPI + ST)',cl:CLR.green},
+        {s:10,e:12,t:'⚙️ SIMULAÇÃO',cl:CLR.orange},{s:13,e:16,t:'📤 DEDUÇÕES VENDA',cl:CLR.red},
+        {s:17,e:20,t:'💰 RESULTADO',cl:CLR.purple}];
+    }
+
+    // Group header row
+    grps.forEach(g => {
+      ws.mergeCells(R,g.s,R,g.e);
+      ws.getCell(R,g.s).value = g.t;
+      ws.getCell(R,g.s).font = font({size:9,bold:true,color:{argb:'FF'+g.cl}});
+      for(let c=g.s;c<=g.e;c++){ws.getCell(R,c).fill=F(CLR.hdr);ws.getCell(R,c).alignment={horizontal:'center',vertical:'middle'};ws.getCell(R,c).border=borders;}
+    });
+    R++;
+
+    // Column headers
+    cols.forEach((h,i) => {
+      const c=ws.getCell(R,i+1);
+      c.value=h; c.font=font({size:9,bold:true,color:{argb:'FF'+CLR.white}});
+      c.fill=F(CLR.sub); c.alignment={horizontal:i<3?'left':'center',vertical:'middle',wrapText:true};
+      c.border=borders;
+    });
+    ws.getRow(R).height=30;
+    R++;
+
+    // Data rows
+    const dStart = R;
+    sup.products.forEach((p,idx) => {
+      const s = stt[p.id];
+      const c = calcProduct(sup, p, params);
+      const r = R+idx;
+      const alt = idx%2===1;
+      const rf = alt?CLR.alt:CLR.white;
+      const hasST = p.st > 0;
+
+      if(!hasIPIST) {
+        ws.getCell(r,1).value=p.id;
+        ws.getCell(r,2).value=p.desc;
+        ws.getCell(r,3).value=p.ncm;
+        ws.getCell(r,4).value=p.custoICMS; ws.getCell(r,4).font=font({color:{argb:'FF0000FF'}});
+        ws.getCell(r,5).value={formula:`-D${r}*(${PR.icmsCompra}+${PR.pis}+${PR.cofins})`,result:-c.totalCreditos};
+        ws.getCell(r,5).font=font({color:{argb:'FF'+CLR.green}});
+        ws.getCell(r,6).value={formula:`D${r}+E${r}`,result:c.custoEfetivo-c.frete};
+        ws.getCell(r,7).value=s.frete; ws.getCell(r,7).font=font({color:{argb:'FF0000FF'}}); ws.getCell(r,7).fill=F(CLR.freightBg);
+        ws.getCell(r,8).value={formula:`F${r}+G${r}`,result:c.custoEfetivo}; ws.getCell(r,8).font=font({bold:true});
+        ws.getCell(r,9).value=s.pv; ws.getCell(r,9).font=font({bold:true,color:{argb:'FF0000FF'}}); ws.getCell(r,9).fill=F(CLR.inputBg);
+        ws.getCell(r,10).value={formula:`-I${r}*${PR.icmsVenda}`,result:-c.icmsDebito}; ws.getCell(r,10).font=font({color:{argb:'FF'+CLR.red}});
+        ws.getCell(r,11).value={formula:`-I${r}*(${PR.pis}+${PR.cofins})`,result:-c.pisCofDebito}; ws.getCell(r,11).font=font({color:{argb:'FF'+CLR.red}});
+        ws.getCell(r,12).value={formula:`-I${r}*${PR.comissao}`,result:-c.comissaoML}; ws.getCell(r,12).font=font({color:{argb:'FF'+CLR.red}});
+        ws.getCell(r,13).value={formula:`I${r}+J${r}+K${r}+L${r}`,result:c.receitaLiquida}; ws.getCell(r,13).font=font({bold:true});
+        ws.getCell(r,14).value={formula:`M${r}-H${r}`,result:c.margemContrib}; ws.getCell(r,14).font=font({bold:true,color:{argb:'FF'+(c.margemContrib>=0?CLR.green:CLR.red)}});
+        ws.getCell(r,15).value={formula:`IF(N${r}>0,-N${r}*${PR.ir},0)`,result:-c.ircsll}; ws.getCell(r,15).font=font({color:{argb:'FF'+CLR.dim}});
+        ws.getCell(r,16).value={formula:`N${r}+O${r}`,result:c.lucroLiquido}; ws.getCell(r,16).font=font({bold:true,color:{argb:'FF'+(c.lucroLiquido>=0?CLR.green:CLR.red)}});
+        ws.getCell(r,17).value={formula:`IF(I${r}>0,P${r}/I${r},0)`,result:c.mlPct/100};
+        ws.getCell(r,17).font=font({bold:true,color:{argb:'FF'+(c.mlPct>=15?CLR.cyan:c.mlPct>=8?CLR.green:c.mlPct>=0?CLR.yellow:CLR.red)}});
+        for(let cc=1;cc<=17;cc++){
+          const cl=ws.getCell(r,cc);
+          if(!cl.fill||!cl.fill.fgColor)cl.fill=F(rf);
+          if(cc>=4&&cc<=16)cl.numFmt='#,##0.00';
+          if(cc===17)cl.numFmt='0.00%';
+          cl.alignment={horizontal:cc<=3?'left':'right',vertical:'middle'};
+          cl.border=borders;
+        }
+      } else {
+        ws.getCell(r,1).value=p.id;
+        ws.getCell(r,2).value=p.desc+(hasST?' [ST]':'');
+        ws.getCell(r,3).value=p.ncm;
+        ws.getCell(r,4).value=p.custoICMS; ws.getCell(r,4).font=font({color:{argb:'FF0000FF'}});
+        ws.getCell(r,5).value=p.ipi/100; ws.getCell(r,5).numFmt='0.00%'; ws.getCell(r,5).font=font({color:{argb:'FF0000FF'}});
+        ws.getCell(r,6).value={formula:`D${r}*E${r}`,result:c.ipiAmt}; ws.getCell(r,6).font=font({color:{argb:'FF'+CLR.dim}});
+        ws.getCell(r,7).value=p.st; ws.getCell(r,7).font=font({color:{argb:'FF'+(hasST?CLR.orange:CLR.dim)}});
+        if(hasST)ws.getCell(r,7).fill=F(CLR.freightBg);
+        ws.getCell(r,8).value={formula:`D${r}+F${r}+G${r}`,result:c.custoNFTotal}; ws.getCell(r,8).font=font({bold:true});
+        ws.getCell(r,9).value={formula:`-D${r}*(${PR.icmsCompra}+${PR.pis}+${PR.cofins})`,result:-c.totalCreditos};
+        ws.getCell(r,9).font=font({color:{argb:'FF'+CLR.green}});
+        ws.getCell(r,10).value=s.frete; ws.getCell(r,10).font=font({color:{argb:'FF0000FF'}}); ws.getCell(r,10).fill=F(CLR.freightBg);
+        ws.getCell(r,11).value={formula:`H${r}+I${r}+J${r}`,result:c.custoEfetivo}; ws.getCell(r,11).font=font({bold:true});
+        ws.getCell(r,12).value=s.pv; ws.getCell(r,12).font=font({bold:true,color:{argb:'FF0000FF'}}); ws.getCell(r,12).fill=F(CLR.inputBg);
+        ws.getCell(r,13).value={formula:`IF(G${r}>0,0,-L${r}*${PR.icmsVenda})`,result:-c.icmsDebito};
+        ws.getCell(r,13).font=font({color:{argb:'FF'+(hasST?CLR.green:CLR.red)}});
+        ws.getCell(r,14).value={formula:`-L${r}*(${PR.pis}+${PR.cofins})`,result:-c.pisCofDebito}; ws.getCell(r,14).font=font({color:{argb:'FF'+CLR.red}});
+        ws.getCell(r,15).value={formula:`-L${r}*${PR.comissao}`,result:-c.comissaoML}; ws.getCell(r,15).font=font({color:{argb:'FF'+CLR.red}});
+        ws.getCell(r,16).value={formula:`L${r}+M${r}+N${r}+O${r}`,result:c.receitaLiquida}; ws.getCell(r,16).font=font({bold:true});
+        ws.getCell(r,17).value={formula:`P${r}-K${r}`,result:c.margemContrib}; ws.getCell(r,17).font=font({bold:true,color:{argb:'FF'+(c.margemContrib>=0?CLR.green:CLR.red)}});
+        ws.getCell(r,18).value={formula:`IF(Q${r}>0,-Q${r}*${PR.ir},0)`,result:-c.ircsll}; ws.getCell(r,18).font=font({color:{argb:'FF'+CLR.dim}});
+        ws.getCell(r,19).value={formula:`Q${r}+R${r}`,result:c.lucroLiquido}; ws.getCell(r,19).font=font({bold:true,color:{argb:'FF'+(c.lucroLiquido>=0?CLR.green:CLR.red)}});
+        ws.getCell(r,20).value={formula:`IF(L${r}>0,S${r}/L${r},0)`,result:c.mlPct/100};
+        ws.getCell(r,20).font=font({bold:true,color:{argb:'FF'+(c.mlPct>=15?CLR.cyan:c.mlPct>=8?CLR.green:c.mlPct>=0?CLR.yellow:CLR.red)}});
+        for(let cc=1;cc<=20;cc++){
+          const cl=ws.getCell(r,cc);
+          if(!cl.fill||!cl.fill.fgColor)cl.fill=F(rf);
+          if(cc>=4&&cc!==5&&cc<=19)cl.numFmt='#,##0.00';
+          if(cc===20)cl.numFmt='0.00%';
+          cl.alignment={horizontal:cc<=3?'left':'right',vertical:'middle'};
+          cl.border=borders;
+        }
+      }
+    });
+
+    // TOTAL ROW
+    const totR = dStart + sup.products.length;
+    const lastD = totR - 1;
+    const mc = hasIPIST?20:17;
+    ws.getCell(totR,1).value='';
+    ws.getCell(totR,2).value='TOTAL (1 un. cada)';
+    ws.getCell(totR,3).value='';
+    const sC = hasIPIST?[4,6,7,8,9,10,11,12,13,14,15,16,17,18,19]:[4,5,6,7,8,9,10,11,12,13,14,15,16];
+    sC.forEach(cc=>{
+      const col = cc<=26?String.fromCharCode(64+cc):('A'+String.fromCharCode(64+cc-26));
+      ws.getCell(totR,cc).value={formula:`SUM(${col}${dStart}:${col}${lastD})`};
+      ws.getCell(totR,cc).numFmt='#,##0.00';
+    });
+    const mlCol=hasIPIST?20:17; const pvCol=hasIPIST?'L':'I'; const lucCol=hasIPIST?'S':'P';
+    ws.getCell(totR,mlCol).value={formula:`IF(${pvCol}${totR}>0,${lucCol}${totR}/${pvCol}${totR},0)`};
+    ws.getCell(totR,mlCol).numFmt='0.00%';
+    for(let cc=1;cc<=mc;cc++){
+      ws.getCell(totR,cc).fill=F(CLR.hdr);
+      ws.getCell(totR,cc).font=font({bold:true,color:{argb:'FF'+CLR.white}});
+      ws.getCell(totR,cc).alignment={horizontal:cc<=3?'left':'right',vertical:'middle'};
+      ws.getCell(totR,cc).border=borders;
+    }
+
+    // Column widths
+    if(!hasIPIST){
+      ws.columns=[{width:5},{width:38},{width:11},{width:14},{width:14},{width:14},{width:12},{width:14},
+        {width:14},{width:14},{width:14},{width:14},{width:14},{width:15},{width:13},{width:14},{width:9}];
+    } else {
+      ws.columns=[{width:5},{width:38},{width:11},{width:14},{width:8},{width:12},{width:12},
+        {width:14},{width:14},{width:12},{width:14},{width:14},{width:14},{width:14},{width:14},
+        {width:14},{width:15},{width:13},{width:14},{width:9}];
+    }
+
+    R = totR + 2;
+
+    // ── RESUMO ──
+    ws.mergeCells(R,1,R,6);
+    ws.getCell(R,1).value='📈 RESUMO DA OPERAÇÃO (1 un. de cada)';
+    ws.getCell(R,1).font=font({size:11,bold:true,color:{argb:'FF'+CLR.accent}});
+    R++;
+    const cCMV=hasIPIST?'K':'H',cPV=hasIPIST?'L':'I',cMrg=hasIPIST?'Q':'N',cIR=hasIPIST?'R':'O',cLuc=hasIPIST?'S':'P',cML=hasIPIST?'T':'Q';
+    const sumItems=[
+      ['Investimento Total (CMV Efetivo)',`${cCMV}${totR}`,CLR.green,'#,##0.00'],
+      ['Faturamento Bruto',`${cPV}${totR}`,CLR.accent,'#,##0.00'],
+      ['Margem de Contribuição',`${cMrg}${totR}`,CLR.purple,'#,##0.00'],
+      ['IRPJ/CSLL',`${cIR}${totR}`,CLR.dim,'#,##0.00'],
+      ['Lucro Líquido Estimado',`${cLuc}${totR}`,CLR.cyan,'#,##0.00'],
+      ['ML% Geral',`${cML}${totR}`,CLR.cyan,'0.00%'],
+    ];
+    sumItems.forEach(([lbl,ref,clr,fmt])=>{
+      ws.getCell(R,1).value=lbl; ws.getCell(R,1).font=font({bold:true}); ws.getCell(R,1).fill=F(CLR.light);
+      ws.getCell(R,2).value={formula:`=${ref}`}; ws.getCell(R,2).numFmt=fmt;
+      ws.getCell(R,2).font=font({size:12,bold:true,color:{argb:'FF'+clr}}); ws.getCell(R,2).fill=F(CLR.light);
+      for(let c=1;c<=2;c++) ws.getCell(R,c).border=borders;
+      R++;
+    });
+    R++;
+
+    // ── ANÁLISE PREÇO MÍNIMO ──
+    ws.mergeCells(R,1,R,6);
+    ws.getCell(R,1).value='🎯 PREÇO MÍNIMO VIÁVEL & TARGETS DE MARGEM';
+    ws.getCell(R,1).font=font({size:11,bold:true,color:{argb:'FF'+CLR.accent}});
+    R++;
+    ['Produto','Custo NF Total','Custo Efetivo','Preço Mín\n(MC=0)','Preço p/\n10% ML','Preço p/\n15% ML','Preço p/\n20% ML','Markup\nMínimo'].forEach((h,i)=>{
+      const c=ws.getCell(R,i+1);
+      c.value=h; c.font=font({size:9,bold:true,color:{argb:'FF'+CLR.white}});
+      c.fill=F(CLR.sub); c.alignment={horizontal:i===0?'left':'center',vertical:'middle',wrapText:true};
+      c.border=borders;
+    });
+    ws.getRow(R).height=28;
+    R++;
+
+    sup.products.forEach((p,idx)=>{
+      const s=stt[p.id]; const cc=calcProduct(sup,p,params); const hasST=p.st>0;
+      const dRate=(hasST?0:(sup.icmsVendaEfetiva||params.icmsVenda))+params.pis+params.cofins+params.comissao;
+      const nRate=1-dRate;
+      const pvMin=nRate>0?cc.custoEfetivo/nRate:99999;
+      const pvT=t=>{const d=nRate*(1-params.ir)-t/100;return d>0?cc.custoEfetivo*(1-params.ir)/d:99999;};
+      const mkup=pvMin>0&&cc.custoNFTotal>0?((pvMin/cc.custoNFTotal)-1):0;
+      const alt=idx%2===1;
+
+      ws.getCell(R,1).value=p.desc+(hasST?' [ST]':'');
+      ws.getCell(R,2).value=cc.custoNFTotal; ws.getCell(R,2).numFmt='#,##0.00';
+      ws.getCell(R,3).value=cc.custoEfetivo; ws.getCell(R,3).numFmt='#,##0.00'; ws.getCell(R,3).font=font({bold:true});
+      ws.getCell(R,4).value=pvMin; ws.getCell(R,4).numFmt='#,##0.00'; ws.getCell(R,4).font=font({bold:true,color:{argb:'FF'+CLR.yellow}});
+      ws.getCell(R,5).value=pvT(10); ws.getCell(R,5).numFmt='#,##0.00'; ws.getCell(R,5).font=font({color:{argb:'FF'+CLR.green}});
+      ws.getCell(R,6).value=pvT(15); ws.getCell(R,6).numFmt='#,##0.00'; ws.getCell(R,6).font=font({color:{argb:'FF'+CLR.cyan}});
+      ws.getCell(R,7).value=pvT(20); ws.getCell(R,7).numFmt='#,##0.00'; ws.getCell(R,7).font=font({color:{argb:'FF'+CLR.purple}});
+      ws.getCell(R,8).value=mkup; ws.getCell(R,8).numFmt='0%'; ws.getCell(R,8).font=font({bold:true,color:{argb:'FF'+CLR.orange}});
+      for(let c=1;c<=8;c++){
+        ws.getCell(R,c).fill=F(alt?CLR.alt:CLR.white);
+        ws.getCell(R,c).alignment={horizontal:c===1?'left':'right',vertical:'middle'};
+        ws.getCell(R,c).border=borders;
+      }
+      R++;
+    });
+
+    R+=2;
+    ws.getCell(R,1).value='LEGENDA:'; ws.getCell(R,1).font=font({bold:true,size:9}); R++;
+    [['Texto Azul = Inputs editáveis (altere para simular cenários)','0000FF'],
+     ['Fundo Amarelo = Parâmetros globais (células de referência $B$)','B8860B'],
+     ['Fundo Azul Claro = Preço de Venda (principal variável de simulação)','3B82F6'],
+     ['Verde = Créditos tributários / Resultados positivos',CLR.green],
+     ['Vermelho = Débitos tributários / Resultados negativos',CLR.red],
+     ['[ST] = Substituição Tributária: ICMS débito = 0 na venda',CLR.orange],
+    ].forEach(([t,c])=>{ws.getCell(R,1).value=t;ws.getCell(R,1).font=font({size:9,color:{argb:'FF'+c}});R++;});
+    ws.getCell(R,1).value='Modelo tributário simplificado — consulte seu contador para apuração definitiva.';
+    ws.getCell(R,1).font=font({size:9,italic:true,color:{argb:'FF'+CLR.dim}});
+  }
+
+  activeTab = savedTab; // restore
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`MBDJ_Precificacao_${mode==='all'?'Todas_Abas':activeTab.toUpperCase()}_${new Date().toISOString().slice(0,10)}.xlsx`;
+  a.click(); URL.revokeObjectURL(a.href);
+  showSaveStatus('📗 Excel exportado');
+}
+
+// INIT
+loadFromLS();
+renderHeader(); renderFormula(); renderTable(); renderAnalysis();
+</script>
+</body>
+</html>
